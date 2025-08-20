@@ -39,7 +39,7 @@ class Listing(BaseModel):
 
 class SearchResponse(BaseModel):
     listings: List[Listing]
-    amenities_used: Dict[str, int] # counts per category fetched
+    amenities_used: Dict[str, list]
 
 # -----------------
 # Utilities
@@ -107,10 +107,10 @@ def bbox_key(bbox: Tuple[float, float, float, float]) -> str:
     return ",".join(f"{x:.5f}" for x in bbox)
 
 def build_overpass_query(
-bbox: Tuple[float, float, float, float],
-need_parks: bool,
-worship_types: List[str],
-store_types: List[str]
+    bbox: Tuple[float, float, float, float],
+    need_parks: bool,
+    worship_types: List[str],
+    store_types: List[str]
 ) -> Tuple[str, List[str]]:
     """Build a single Overpass query that returns centers for all requested categories.
     Returns (query, labels) where labels are the category labels in the same order of blocks added.
@@ -243,7 +243,7 @@ async def search_listings(
     worship_types = worship or []
     store_types = stores or []
     if not need_parks and not worship_types and not store_types:
-        return SearchResponse(listings=candidates[:MAX_LISTINGS], amenities_used={"parks": 0, "worship": 0, "stores": 0})
+        return SearchResponse(listings=candidates[:MAX_LISTINGS], amenities_used={"parks": [], "worship": [], "stores": []})
     
     # Expand bbox by radius and fetch amenities once
     expanded = expand_bbox_by_radius(bbox, radius_m)
@@ -272,5 +272,5 @@ async def search_listings(
 
     return SearchResponse(
         listings=filtered[:MAX_LISTINGS],
-        amenities_used={k: len(v) for k, v in amenities.items()},
+        amenities_used={k: v for k, v in amenities.items()},
     )

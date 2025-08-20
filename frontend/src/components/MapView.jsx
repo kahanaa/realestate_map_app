@@ -15,6 +15,32 @@ const houseIcon = new L.Icon({
     shadowSize: [41, 41],
 });
 
+// --- Simple emoji markers (no external assets) ---
+const createEmojiIcon = (emoji) =>
+  L.divIcon({
+    className: 'poi-emoji',
+    html: `<div style="
+      font-size:18px;line-height:18px;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
+    ">${emoji}</div>`,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+});
+
+// Category icons
+const ICONS = {
+    store: createEmojiIcon('🛍️'),
+    synagogue: createEmojiIcon('✡️'),
+    church: createEmojiIcon('✝️'),
+    mosque: createEmojiIcon('☪️'),
+    hindu_temple: createEmojiIcon('🕉️'),
+    buddhist_temple: createEmojiIcon('☸️'),
+    park: createEmojiIcon('🌳'),
+};
+
 function BoundsWatcher({ onChange }) {
     const map = useMapEvents({
         moveend: () => {
@@ -36,7 +62,7 @@ function BoundsWatcher({ onChange }) {
 
 export default function MapView({ filters }) {
     const [bbox, setBbox] = useState(null);
-    const [data, setData] = useState({ listings: [], amenities_used: { parks: 0, worship: 0, stores: 0 } });
+    const [data, setData] = useState({ listings: [], amenities_used: { parks: [], worship: [], stores: [] } });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -60,6 +86,8 @@ export default function MapView({ filters }) {
                     stores: filters.stores,
                 });
                 if (!cancelled) setData(payload);
+                // // test
+                // console.log(payload);
             } catch (err) {
                 if (!cancelled) setError(err.message || String(err));
             } finally {
@@ -91,6 +119,50 @@ export default function MapView({ filters }) {
                         </Popup>
                     </Marker>
                 ))}
+
+                {data.amenities_used.worship.map((l) => (
+                    l.tags.religion === "jewish" ? (
+                        <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.synagogue}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name}</strong>
+                            </div>
+                        </Popup>
+                        </Marker>
+                    ) : l.tags.religion === "christian" ? (
+                        <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.church}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name}</strong>
+                            </div>
+                        </Popup>
+                        </Marker>
+                    ) : l.tags.religion === "muslim" ? (
+                        <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.mosque}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name}</strong>
+                            </div>
+                        </Popup>
+                        </Marker>
+                    ) : l.tags.religion === "hindu" ? (
+                        <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.hindu_temple}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name}</strong>
+                            </div>
+                        </Popup>
+                        </Marker>
+                    ) : l.tags.religion === "buddhist" ? (
+                        <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.buddhist_temple}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name}</strong>
+                            </div>
+                        </Popup>
+                        </Marker>
+                    ) : null
+                ))}
             </MapContainer>
 
             <div style={{
@@ -106,7 +178,7 @@ export default function MapView({ filters }) {
             }}>
                 {loading ? "Loading…" : (
                     error ? <span style={{color:'#b91c1c'}}>Error: {error}</span> : (
-                        <span>Showing {data.listings.length} listings • amenities fetched: parks {data.amenities_used.parks}, worship {data.amenities_used.worship}, stores {data.amenities_used.stores}</span>
+                        <span>Showing {data.listings.length} listings • amenities fetched: parks {data.amenities_used.parks.length}, worship {data.amenities_used.worship.length}, stores {data.amenities_used.stores.length}</span>
                     )
                 )}
             </div>
