@@ -1,0 +1,62 @@
+[
+    {
+    "id": "nyc-001",
+    "title": "Sunny 1BR in Upper West Side",
+    "address": "240 W 73rd St, New York, NY",
+    "lat": 40.7795,
+    "lng": -73.9839,
+    "price": 3200,
+    "sale_type": "rent",
+    "beds": 1,
+    "baths": 1,
+    "sqft": 650
+    },
+    {
+    "id": "nyc-002",
+    "title": "2BR Condo near Prospect Park",
+    "address": "15 Ocean Ave, Brooklyn, NY",
+    "lat": 40.6559,
+    "lng": -73.9626,
+    "price": 890000,
+    "sale_type": "sale",
+    "beds": 2,
+    "baths": 2,
+    "sqft": 920
+    },
+    {
+    "id": "nyc-003",
+    "title": "3BR House in Queens",
+    "address": "72-15 35th Ave, Queens, NY",
+    "lat": 40.7523,
+    "lng": -73.8943,
+    "price": 2800,
+    "sale_type": "rent",
+    "beds": 3,
+    "baths": 2,
+    "sqft": 1150
+    },
+    {
+    "id": "nyc-004",
+    "title": "Studio near Washington Square",
+    "address": "12 Waverly Pl, New York, NY",
+    "lat": 40.7316,
+    "lng": -73.9970,
+    "price": 2600,
+    "sale_type": "rent",
+    "beds": 0,
+    "baths": 1,
+    "sqft": 400
+    },
+    {
+    "id": "nyc-005",
+    "title": "4BR Townhome in Park Slope",
+    "address": "7th Ave & Carroll St, Brooklyn, NY",
+    "lat": 40.6742,
+    "lng": -73.9780,
+    "price": 2450000,
+    "sale_type": "sale",
+    "beds": 4,
+    "baths": 3,
+    "sqft": 2100
+    }
+]
