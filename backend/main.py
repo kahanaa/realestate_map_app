@@ -163,9 +163,10 @@ async def fetch_amenities(
     if not query:
         return result
     
-    key = (bbox_key(bbox), tuple(sorted(labels)))
-    if key in amenities_cache:
-        return amenities_cache[key]
+    # Include specific worship and store types in cache key to avoid stale data
+    cache_key = (bbox_key(bbox), tuple(sorted(labels)), tuple(sorted(worship_types)), tuple(sorted(store_types)))
+    if cache_key in amenities_cache:
+        return amenities_cache[cache_key]
     
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(OVERPASS_URL, data={"data": query})
@@ -190,7 +191,7 @@ async def fetch_amenities(
         elif "shop" in tags:
             result["stores"].append(rec)
 
-    amenities_cache[key] = result
+    amenities_cache[cache_key] = result
     return result
 
 # -----------------
