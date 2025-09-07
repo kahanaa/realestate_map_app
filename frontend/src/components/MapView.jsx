@@ -9,8 +9,8 @@ const DEFAULT_CENTER = [40.7128, -74.006];
 const houseIcon = new L.Icon({
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
     iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
+    iconAnchor: [0, 0],
+    popupAnchor: [0, 0],
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
     shadowSize: [41, 41],
 });
@@ -24,10 +24,10 @@ const createEmojiIcon = (emoji) =>
       transform: translate(-50%, -50%);
       filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
     ">${emoji}</div>`,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
+    iconSize: [25, 25],
+    iconAnchor: [0, 0],
+    popupAnchor: [0, 0],
+    shadowSize: [25, 25],
 });
 
 // Category icons
@@ -123,45 +123,65 @@ export default function MapView({ filters }) {
                 {data.amenities_used.worship.map((l) => (
                     l.tags.religion === "jewish" ? (
                         <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.synagogue}>
-                        <Popup>
-                            <div style={{minWidth:220}}>
-                                <strong>{l.tags.name}</strong>
-                            </div>
-                        </Popup>
+                            <Popup>
+                                <div style={{minWidth:220}}>
+                                    <strong>{l.tags.name}</strong>
+                                </div>
+                            </Popup>
                         </Marker>
                     ) : l.tags.religion === "christian" ? (
                         <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.church}>
-                        <Popup>
-                            <div style={{minWidth:220}}>
-                                <strong>{l.tags.name}</strong>
-                            </div>
-                        </Popup>
+                            <Popup>
+                                <div style={{minWidth:220}}>
+                                    <strong>{l.tags.name}</strong>
+                                </div>
+                            </Popup>
                         </Marker>
                     ) : l.tags.religion === "muslim" ? (
                         <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.mosque}>
-                        <Popup>
-                            <div style={{minWidth:220}}>
-                                <strong>{l.tags.name}</strong>
-                            </div>
-                        </Popup>
+                            <Popup>
+                                <div style={{minWidth:220}}>
+                                    <strong>{l.tags.name}</strong>
+                                </div>
+                            </Popup>
                         </Marker>
                     ) : l.tags.religion === "hindu" ? (
                         <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.hindu_temple}>
-                        <Popup>
-                            <div style={{minWidth:220}}>
-                                <strong>{l.tags.name}</strong>
-                            </div>
-                        </Popup>
+                            <Popup>
+                                <div style={{minWidth:220}}>
+                                    <strong>{l.tags.name}</strong>
+                                </div>
+                            </Popup>
                         </Marker>
                     ) : l.tags.religion === "buddhist" ? (
                         <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.buddhist_temple}>
-                        <Popup>
-                            <div style={{minWidth:220}}>
-                                <strong>{l.tags.name}</strong>
-                            </div>
-                        </Popup>
+                            <Popup>
+                                <div style={{minWidth:220}}>
+                                    <strong>{l.tags.name}</strong>
+                                </div>
+                            </Popup>
                         </Marker>
                     ) : null
+                ))}
+
+                {data.amenities_used.parks.map((l) => (
+                    <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.park}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name || 'Park'}</strong>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
+                {data.amenities_used.stores.map((l) => (
+                    <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.store}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name || l.tags.shop || 'Store'}</strong>
+                            </div>
+                        </Popup>
+                    </Marker>
                 ))}
             </MapContainer>
 

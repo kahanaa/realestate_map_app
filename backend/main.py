@@ -183,7 +183,7 @@ async def fetch_amenities(
         if lat is None or lon is None:
             continue
 
-        rec = {"lat": lat, "lng": lon, "tags": tags}
+        rec = {"id": el.get("id", f"osm-{lat}-{lon}"), "lat": lat, "lng": lon, "tags": tags}
         if tags.get("leisure") == "park":
             result["parks"].append(rec)
         elif tags.get("amenity") == "place_of_worship":
