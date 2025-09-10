@@ -110,7 +110,20 @@ export default function MapView({ filters }) {
                 {data.listings.map((l) => (
                     <Marker key={l.id} position={[l.lat, l.lng]} icon={houseIcon}>
                         <Popup>
-                            <div style={{minWidth:220}}>
+                            <div style={{minWidth:280}}>
+                                {l.image_url && (
+                                    <img 
+                                        src={l.image_url} 
+                                        alt={l.title}
+                                        style={{
+                                            width: '100%',
+                                            height: '150px',
+                                            objectFit: 'cover',
+                                            borderRadius: '8px',
+                                            marginBottom: '8px'
+                                        }}
+                                    />
+                                )}
                                 <strong>{l.title}</strong>
                                 <div>{l.address}</div>
                                 <div>{l.sale_type.toUpperCase()} • ${l.price.toLocaleString()}</div>
