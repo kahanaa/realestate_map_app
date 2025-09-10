@@ -36,7 +36,7 @@ class Listing(BaseModel):
     beds: int
     baths: int
     sqft: int
-    image_url: str
+    google_maps_link: str = ""
 
 class SearchResponse(BaseModel):
     listings: List[Listing]

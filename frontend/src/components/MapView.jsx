@@ -60,11 +60,18 @@ function BoundsWatcher({ onChange }) {
     return null;
 }
 
-export default function MapView({ filters }) {
+export default function MapView({ filters, onLoadingChange }) {
     const [bbox, setBbox] = useState(null);
     const [data, setData] = useState({ listings: [], amenities_used: { parks: [], worship: [], stores: [] } });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Notify parent component when loading state changes
+    useEffect(() => {
+        if (onLoadingChange) {
+            onLoadingChange(loading);
+        }
+    }, [loading, onLoadingChange]);
 
     useEffect(() => {
         let cancelled = false;
@@ -86,8 +93,6 @@ export default function MapView({ filters }) {
                     stores: filters.stores,
                 });
                 if (!cancelled) setData(payload);
-                // // test
-                // console.log(payload);
             } catch (err) {
                 if (!cancelled) setError(err.message || String(err));
             } finally {
@@ -111,23 +116,31 @@ export default function MapView({ filters }) {
                     <Marker key={l.id} position={[l.lat, l.lng]} icon={houseIcon}>
                         <Popup>
                             <div style={{minWidth:280}}>
-                                {l.image_url && (
-                                    <img 
-                                        src={l.image_url} 
-                                        alt={l.title}
-                                        style={{
-                                            width: '100%',
-                                            height: '150px',
-                                            objectFit: 'cover',
-                                            borderRadius: '8px',
-                                            marginBottom: '8px'
-                                        }}
-                                    />
-                                )}
                                 <strong>{l.title}</strong>
                                 <div>{l.address}</div>
                                 <div>{l.sale_type.toUpperCase()} • ${l.price.toLocaleString()}</div>
                                 <div>{l.beds} bd • {l.baths} ba • {l.sqft} sqft</div>
+                                {l.google_maps_link && (
+                                    <div style={{marginTop: '8px'}}>
+                                        <a 
+                                            href={l.google_maps_link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                color: '#4285f4',
+                                                textDecoration: 'none',
+                                                fontSize: '12px',
+                                                fontWeight: '500',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}
+                                        >
+                                            <span>📍</span>
+                                            <span>View on Google Maps</span>
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         </Popup>
                     </Marker>
