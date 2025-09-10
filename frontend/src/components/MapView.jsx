@@ -9,8 +9,8 @@ const DEFAULT_CENTER = [40.7128, -74.006];
 const houseIcon = new L.Icon({
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
     iconSize: [25, 41],
-    iconAnchor: [0, 0],
-    popupAnchor: [0, 0],
+    iconAnchor: [12, 41], // Center horizontally, bottom of icon at coordinate
+    popupAnchor: [0, -41], // Popup appears above the marker
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
     shadowSize: [41, 41],
 });
@@ -25,8 +25,8 @@ const createEmojiIcon = (emoji) =>
       filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
     ">${emoji}</div>`,
     iconSize: [25, 25],
-    iconAnchor: [0, 0],
-    popupAnchor: [0, 0],
+    iconAnchor: [0, 0], // Center the emoji on the coordinate
+    popupAnchor: [0, 0], // Popup appears above the emoji
     shadowSize: [25, 25],
 });
 
