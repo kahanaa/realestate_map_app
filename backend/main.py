@@ -217,7 +217,9 @@ async def search_listings(
     min_baths: Optional[int] = None,
 
     # Proximity filters
-    radius_m: int = Query(1000, ge=50, le=10000, description="Amenity proximity radius in meters"),
+    parks_radius: int = Query(1000, ge=25, le=10000, description="Parks proximity radius in meters"),
+    worship_radius: int = Query(1000, ge=25, le=10000, description="Worship proximity radius in meters"),
+    stores_radius: int = Query(1000, ge=25, le=10000, description="Stores proximity radius in meters"),
     need_parks: bool = Query(False, description="Require proximity to a park"),
     worship: Optional[List[str]] = Query(None, description="List of worship types: synagogue,church,mosque,hindu_temple,buddhist_temple"),
     stores: Optional[List[str]] = Query(None, description="List of store groups: grocery,home_improvement,appliance,farm_supplies"),
@@ -247,24 +249,25 @@ async def search_listings(
     if not need_parks and not worship_types and not store_types:
         return SearchResponse(listings=candidates[:MAX_LISTINGS], amenities_used={"parks": [], "worship": [], "stores": []})
     
-    # Expand bbox by radius and fetch amenities once
-    expanded = expand_bbox_by_radius(bbox, radius_m)
+    # Expand bbox by the maximum radius needed and fetch amenities once
+    max_radius = max(parks_radius, worship_radius, stores_radius)
+    expanded = expand_bbox_by_radius(bbox, max_radius)
     amenities = await fetch_amenities(expanded, need_parks, worship_types, store_types)
 
     def passes_proximity(lst: Listing) -> bool:
         ok = True
         if need_parks:
-            ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= radius_m for a in amenities["parks"]) \
+            ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= parks_radius for a in amenities["parks"]) \
                     if amenities["parks"] else False
         if worship_types:
-            ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= radius_m and \
+            ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= worship_radius and \
                     (a["tags"].get("religion") in {WORSHIP_RELIGION_MAP.get(w, w) for w in worship_types})
                     for a in amenities["worship"]) if amenities["worship"] else False
         if store_types:
             allowed_shops = set()
             for k in store_types:
                 allowed_shops.update(STORE_TAGS.get(k, []))
-            ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= radius_m and \
+            ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= stores_radius and \
                     (a["tags"].get("shop") in allowed_shops)
                     for a in amenities["stores"]) if amenities["stores"] else False
         
