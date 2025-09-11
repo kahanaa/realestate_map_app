@@ -15,15 +15,6 @@ const storeOptions = [
     { value: "farm_supplies", label: "Farm supplies" },
 ];
 
-// // Simple increment/decrement functions
-// function incrementValue(currentValue, max = 5000) {
-//     return Math.min(max, currentValue + 5);
-// }
-
-// function decrementValue(currentValue, min = 25) {
-//     return Math.max(min, currentValue - 5);
-// }
-
 // Custom hook for stable rapid increment
 function useRapidIncrement(setValue, getValue, min = 25, max = 5000) {
     const intervalRef = useRef(null);
