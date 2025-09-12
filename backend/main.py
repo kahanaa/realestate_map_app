@@ -169,14 +169,13 @@ def build_overpass_query(
             gyms.update(GYM_TAGS.get(key, []))
         if gyms:
             regex = "|".join(sorted(gyms))
-            # OLD INCORRECT CODE (commented out):
-            # block = f"(node[\"amenity\"=\"fitness_centre\"][\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
-            #         f"way[\"amenity\"=\"fitness_centre\"][\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
-            #         f"relation[\"amenity\"=\"fitness_centre\"][\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east}););"
-            # CORRECTED CODE:
+            # Query both amenity=fitness_centre and leisure=fitness_centre
             block = f"(node[\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
                     f"way[\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
-                    f"relation[\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east}););"
+                    f"relation[\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                    f"node[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                    f"way[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                    f"relation[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east}););"
             blocks.append(block)
             labels.append("gyms")
 
@@ -226,11 +225,9 @@ async def fetch_amenities(
             result["worship"].append(rec)
         elif "shop" in tags:
             result["stores"].append(rec)
-        # OLD INCORRECT CODE (commented out):
-        # elif tags.get("amenity") == "fitness_centre":
-        #     result["gyms"].append(rec)
-        # CORRECTED CODE:
-        elif tags.get("amenity") in ["fitness_centre", "gym", "yoga", "pilates", "crossfit", "barre", "dance", "martial_arts", "karate", "judo", "taekwondo", "boxing", "muay_thai", "spinning", "swimming_pool", "swimming", "trampoline_park", "climbing", "bouldering"]:
+        # Check both amenity and leisure tags for gyms
+        elif (tags.get("amenity") in ["fitness_centre", "gym", "yoga", "pilates", "crossfit", "barre", "dance", "martial_arts", "karate", "judo", "taekwondo", "boxing", "muay_thai", "spinning", "swimming_pool", "swimming", "trampoline_park", "climbing", "bouldering"] or
+              tags.get("leisure") in ["fitness_centre", "gym", "yoga", "pilates", "crossfit", "barre", "dance", "martial_arts", "karate", "judo", "taekwondo", "boxing", "muay_thai", "spinning", "swimming_pool", "swimming", "trampoline_park", "climbing", "bouldering"]):
             result["gyms"].append(rec)
 
     amenities_cache[cache_key] = result
@@ -333,7 +330,7 @@ async def search_listings(
             #         for a in amenities["gyms"]) if amenities["gyms"] else False
             # CORRECTED CODE:
             ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= gyms_radius and \
-                    (a["tags"].get("amenity") in allowed_gyms)
+                    (a["tags"].get("amenity") in allowed_gyms or a["tags"].get("leisure") in allowed_gyms)
                     for a in amenities["gyms"]) if amenities["gyms"] else False
 
         # test

@@ -14,9 +14,6 @@ export async function fetchListings({ bbox, saleType, minPrice, maxPrice, minBed
         stores_radius: storesRadius,
         gyms_radius: gymsRadius,
         need_parks: needParks,
-        worship: worship,
-        stores: stores,
-        gyms: gyms,
     });
     if (minPrice != null) params.set("min_price", minPrice);
     if (maxPrice != null) params.set("max_price", maxPrice);
