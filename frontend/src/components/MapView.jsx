@@ -39,6 +39,7 @@ const ICONS = {
     hindu_temple: createEmojiIcon('🕉️'),
     buddhist_temple: createEmojiIcon('☸️'),
     park: createEmojiIcon('🌳'),
+    gym: createEmojiIcon('🏋️'),
 };
 
 function BoundsWatcher({ onChange }) {
@@ -54,17 +55,62 @@ function BoundsWatcher({ onChange }) {
         },
     });
     useEffect(() => {
-        const b = map.getBounds();
-        onChange({ west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() });
+        // Use a small delay to ensure the map is fully initialized
+        const timer = setTimeout(() => {
+            const b = map.getBounds();
+            onChange({ west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() });
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
     return null;
 }
 
 export default function MapView({ filters, onLoadingChange }) {
     const [bbox, setBbox] = useState(null);
-    const [data, setData] = useState({ listings: [], amenities_used: { parks: [], worship: [], stores: [] } });
+    const [data, setData] = useState({ listings: [], amenities_used: { parks: [], worship: [], stores: [], gyms: [] } });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+
+    // Initial load with default bbox
+    useEffect(() => {
+        let cancelled = false;
+        async function run() {
+            const defaultBbox = {
+                west: -74.1,
+                south: 40.6,
+                east: -73.8,
+                north: 40.9
+            };
+            setLoading(true);
+            setError(null);
+            try {
+                const payload = await fetchListings({
+                    bbox: defaultBbox,
+                    saleType: filters.saleType,
+                    minPrice: filters.minPrice,
+                    maxPrice: filters.maxPrice,
+                    minBeds: filters.minBeds,
+                    minBaths: filters.minBaths,
+                    parksRadius: filters.parksRadius,
+                    worshipRadius: filters.worshipRadius,
+                    storesRadius: filters.storesRadius,
+                    gymsRadius: filters.gymsRadius,
+                    needParks: filters.needParks,
+                    worship: filters.worship,
+                    stores: filters.stores,
+                    gyms: filters.gyms,
+                });
+                if (!cancelled) setData(payload);
+            } catch (err) {
+                if (!cancelled) setError(err.message || String(err));
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+        run();
+        return () => { cancelled = true; };
+    }, []); // Run only once on mount
 
     // Notify parent component when loading state changes
     useEffect(() => {
@@ -74,9 +120,10 @@ export default function MapView({ filters, onLoadingChange }) {
     }, [loading, onLoadingChange]);
 
     useEffect(() => {
+        if (!bbox) return; // Skip if bbox is not set yet (initial load handled above)
+        
         let cancelled = false;
         async function run() {
-            if (!bbox) return;
             setLoading(true);
             setError(null);
             try {
@@ -90,9 +137,11 @@ export default function MapView({ filters, onLoadingChange }) {
                     parksRadius: filters.parksRadius,
                     worshipRadius: filters.worshipRadius,
                     storesRadius: filters.storesRadius,
+                    gymsRadius: filters.gymsRadius,
                     needParks: filters.needParks,
                     worship: filters.worship,
                     stores: filters.stores,
+                    gyms: filters.gyms,
                 });
                 if (!cancelled) setData(payload);
             } catch (err) {
@@ -211,6 +260,16 @@ export default function MapView({ filters, onLoadingChange }) {
                         </Popup>
                     </Marker>
                 ))}
+
+                {data.amenities_used.gyms.map((l) => (
+                    <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS.gym}>
+                        <Popup>
+                            <div style={{minWidth:220}}>
+                                <strong>{l.tags.name || l.tags.amenity || 'Gym'}</strong>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
             </MapContainer>
 
             <div style={{
@@ -226,7 +285,7 @@ export default function MapView({ filters, onLoadingChange }) {
             }}>
                 {loading ? "Loading…" : (
                     error ? <span style={{color:'#b91c1c'}}>Error: {error}</span> : (
-                        <span>Showing {data.listings.length} listings • amenities fetched: parks {data.amenities_used.parks.length}, worship {data.amenities_used.worship.length}, stores {data.amenities_used.stores.length}</span>
+                        <span>Showing {data.listings.length} listings • amenities fetched: parks {data.amenities_used.parks.length}, worship {data.amenities_used.worship.length}, stores {data.amenities_used.stores.length}, gyms {data.amenities_used.gyms.length}</span>
                     )
                 )}
             </div>

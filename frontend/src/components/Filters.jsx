@@ -15,6 +15,22 @@ const storeOptions = [
     { value: "farm_supplies", label: "Farm supplies" },
 ];
 
+const gymOptions = [
+    { value: "gym", label: "Gyms" },
+    { value: "fitness_center", label: "Fitness centers" },
+    { value: "yoga_studio", label: "Yoga studios" },
+    { value: "pilates_studio", label: "Pilates studios" },
+    { value: "crossfit_gym", label: "Crossfit gyms" },
+    { value: "barre_studio", label: "Barre studios" },
+    { value: "dance_studio", label: "Dance studios" },
+    { value: "martial_arts_gym", label: "Martial arts gyms" },
+    { value: "spinning_studio", label: "Spinning studios" },
+    { value: "swim_studio", label: "Swim studios" },
+    { value: "trampoline_park", label: "Trampoline parks" },
+    { value: "climbing_gym", label: "Climbing gyms" },
+    { value: "rock_climbing_gym", label: "Rock climbing gyms" },
+];
+
 // Custom hook for stable rapid increment
 function useRapidIncrement(setValue, getValue, min = 25, max = 5000) {
     const intervalRef = useRef(null);
@@ -107,6 +123,9 @@ export default function Filters({ value, onChange }) {
     
     const setStoresRadius = useCallback((newValue) => set({ storesRadius: newValue }), [set]);
     const getStoresRadius = useCallback(() => valueRef.current.storesRadius, []);
+
+    const setGymsRadius = useCallback((newValue) => set({ gymsRadius: newValue }), [set]);
+    const getGymsRadius = useCallback(() => valueRef.current.gymsRadius, []);
     
     // Parks radius rapid increment
     const parksIncrement = useRapidIncrement(setParksRadius, getParksRadius);
@@ -116,6 +135,9 @@ export default function Filters({ value, onChange }) {
     
     // Stores radius rapid increment
     const storesIncrement = useRapidIncrement(setStoresRadius, getStoresRadius);
+
+    // Gyms radius rapid increment
+    const gymsIncrement = useRapidIncrement(setGymsRadius, getGymsRadius);
     
     // Stable event handlers
     const handleParksMouseDown = useCallback((direction) => () => {
@@ -129,6 +151,10 @@ export default function Filters({ value, onChange }) {
     const handleStoresMouseDown = useCallback((direction) => () => {
         storesIncrement.startRapidChange(direction);
     }, [storesIncrement]);
+
+    const handleGymsMouseDown = useCallback((direction) => () => {
+        gymsIncrement.startRapidChange(direction);
+    }, [gymsIncrement]);
     
     return (
         <div>
@@ -347,6 +373,76 @@ export default function Filters({ value, onChange }) {
                                     border: '1px solid #d1d5db',
                                     borderRadius: '4px',
                                     backgroundColor: storesIncrement.isActive() ? '#e5e7eb' : '#f9fafb',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '14px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="field">
+                <label className="label">Gyms</label>
+                {gymOptions.map((o) => (
+                    <label key={o.value} className="label">
+                        <input type="checkbox"
+                            checked={value.gyms.includes(o.value)}
+                            onChange={(e) => {
+                                const next = new Set(value.gyms);
+                                e.target.checked ? next.add(o.value) : next.delete(o.value);
+                                set({ gyms: Array.from(next) });
+                            }}
+                        /> {o.label}
+                    </label>
+                ))}
+                {value.gyms.length > 0 && (
+                    <div style={{ marginLeft: '20px', marginTop: '8px' }}>
+                        <label className="label" style={{ fontSize: '11px', color: '#6b7280' }}>Within {value.gymsRadius} meters</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                                type="button"
+                                onMouseDown={handleGymsMouseDown('down')}
+                                onMouseUp={gymsIncrement.stopRapidChange}
+                                onMouseLeave={gymsIncrement.stopRapidChange}
+                                onTouchStart={handleGymsMouseDown('down')}
+                                onTouchEnd={gymsIncrement.stopRapidChange}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    backgroundColor: gymsIncrement.isActive() ? '#e5e7eb' : '#f9fafb',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '14px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                -
+                            </button>
+                            <input type="range" min="25" max="5000" step="50" value={value.gymsRadius} onChange={(e) => set({ gymsRadius: Number(e.target.value) })} style={{ flex: 1 }} />
+                            <button
+                                type="button"
+                                onMouseDown={handleGymsMouseDown('up')}
+                                onMouseUp={gymsIncrement.stopRapidChange}
+                                onMouseLeave={gymsIncrement.stopRapidChange}
+                                onTouchStart={handleGymsMouseDown('up')}
+                                onTouchEnd={gymsIncrement.stopRapidChange}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    backgroundColor: gymsIncrement.isActive() ? '#e5e7eb' : '#f9fafb',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
