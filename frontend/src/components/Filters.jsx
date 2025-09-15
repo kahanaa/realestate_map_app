@@ -16,7 +16,7 @@ const storeOptions = [
 ];
 
 const gymOptions = [
-    { value: "gym", label: "Gyms & Fitness Centers" },
+    { value: "gym", label: "All Gyms & Fitness Centers" },
     { value: "yoga_studio", label: "Yoga studios" },
     { value: "pilates_studio", label: "Pilates studios" },
     { value: "crossfit_gym", label: "Crossfit gyms" },
@@ -403,7 +403,7 @@ export default function Filters({ value, onChange }) {
             </div>
 
             <div className="field">
-                <label className="label">Gyms</label>
+                <label className="label">Gyms & Fitness Centers</label>
                 {gymOptions.map((o) => (
                     <label key={o.value} className="label">
                         <input type="checkbox"
