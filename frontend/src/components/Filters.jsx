@@ -16,8 +16,7 @@ const storeOptions = [
 ];
 
 const gymOptions = [
-    { value: "gym", label: "Gyms" },
-    { value: "fitness_center", label: "Fitness centers" },
+    { value: "gym", label: "Gyms & Fitness Centers" },
     { value: "yoga_studio", label: "Yoga studios" },
     { value: "pilates_studio", label: "Pilates studios" },
     { value: "crossfit_gym", label: "Crossfit gyms" },
@@ -28,7 +27,12 @@ const gymOptions = [
     { value: "swim_studio", label: "Swim studios" },
     { value: "trampoline_park", label: "Trampoline parks" },
     { value: "climbing_gym", label: "Climbing gyms" },
-    { value: "rock_climbing_gym", label: "Rock climbing gyms" },
+];
+
+const sportsOptions = [
+    { value: "tennis_court", label: "Tennis courts" },
+    { value: "golf_driving_range", label: "Golf driving ranges" },
+    { value: "golf_course", label: "Golf courses" },
 ];
 
 // Custom hook for stable rapid increment
@@ -127,6 +131,9 @@ export default function Filters({ value, onChange }) {
     const setGymsRadius = useCallback((newValue) => set({ gymsRadius: newValue }), [set]);
     const getGymsRadius = useCallback(() => valueRef.current.gymsRadius, []);
     
+    const setSportsRadius = useCallback((newValue) => set({ sportsRadius: newValue }), [set]);
+    const getSportsRadius = useCallback(() => valueRef.current.sportsRadius, []);
+    
     // Parks radius rapid increment
     const parksIncrement = useRapidIncrement(setParksRadius, getParksRadius);
     
@@ -138,6 +145,9 @@ export default function Filters({ value, onChange }) {
 
     // Gyms radius rapid increment
     const gymsIncrement = useRapidIncrement(setGymsRadius, getGymsRadius);
+    
+    // Sports radius rapid increment
+    const sportsIncrement = useRapidIncrement(setSportsRadius, getSportsRadius);
     
     // Stable event handlers
     const handleParksMouseDown = useCallback((direction) => () => {
@@ -155,6 +165,10 @@ export default function Filters({ value, onChange }) {
     const handleGymsMouseDown = useCallback((direction) => () => {
         gymsIncrement.startRapidChange(direction);
     }, [gymsIncrement]);
+    
+    const handleSportsMouseDown = useCallback((direction) => () => {
+        sportsIncrement.startRapidChange(direction);
+    }, [sportsIncrement]);
     
     return (
         <div>
@@ -443,6 +457,76 @@ export default function Filters({ value, onChange }) {
                                     border: '1px solid #d1d5db',
                                     borderRadius: '4px',
                                     backgroundColor: gymsIncrement.isActive() ? '#e5e7eb' : '#f9fafb',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '14px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="field">
+                <label className="label">Sports Facilities</label>
+                {sportsOptions.map((o) => (
+                    <label key={o.value} className="label">
+                        <input type="checkbox"
+                            checked={value.sports.includes(o.value)}
+                            onChange={(e) => {
+                                const next = new Set(value.sports);
+                                e.target.checked ? next.add(o.value) : next.delete(o.value);
+                                set({ sports: Array.from(next) });
+                            }}
+                        /> {o.label}
+                    </label>
+                ))}
+                {value.sports.length > 0 && (
+                    <div style={{ marginLeft: '20px', marginTop: '8px' }}>
+                        <label className="label" style={{ fontSize: '11px', color: '#6b7280' }}>Within {value.sportsRadius} meters</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                                type="button"
+                                onMouseDown={handleSportsMouseDown('down')}
+                                onMouseUp={sportsIncrement.stopRapidChange}
+                                onMouseLeave={sportsIncrement.stopRapidChange}
+                                onTouchStart={handleSportsMouseDown('down')}
+                                onTouchEnd={sportsIncrement.stopRapidChange}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    backgroundColor: sportsIncrement.isActive() ? '#e5e7eb' : '#f9fafb',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '14px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                -
+                            </button>
+                            <input type="range" min="25" max="5000" step="50" value={value.sportsRadius} onChange={(e) => set({ sportsRadius: Number(e.target.value) })} style={{ flex: 1 }} />
+                            <button
+                                type="button"
+                                onMouseDown={handleSportsMouseDown('up')}
+                                onMouseUp={sportsIncrement.stopRapidChange}
+                                onMouseLeave={sportsIncrement.stopRapidChange}
+                                onTouchStart={handleSportsMouseDown('up')}
+                                onTouchEnd={sportsIncrement.stopRapidChange}
+                                style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    backgroundColor: sportsIncrement.isActive() ? '#e5e7eb' : '#f9fafb',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',

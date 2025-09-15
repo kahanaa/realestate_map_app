@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
-export async function fetchListings({ bbox, saleType, minPrice, maxPrice, minBeds, minBaths, parksRadius, worshipRadius, storesRadius, gymsRadius, needParks, worship, stores, gyms }) {
+export async function fetchListings({ bbox, saleType, minPrice, maxPrice, minBeds, minBaths, parksRadius, worshipRadius, storesRadius, gymsRadius, sportsRadius, needParks, worship, stores, gyms, sports }) {
     const params = new URLSearchParams({
         west: bbox.west,
         south: bbox.south,
@@ -13,6 +13,7 @@ export async function fetchListings({ bbox, saleType, minPrice, maxPrice, minBed
         worship_radius: worshipRadius,
         stores_radius: storesRadius,
         gyms_radius: gymsRadius,
+        sports_radius: sportsRadius,
         need_parks: needParks,
     });
     if (minPrice != null) params.set("min_price", minPrice);
@@ -22,6 +23,7 @@ export async function fetchListings({ bbox, saleType, minPrice, maxPrice, minBed
     (worship || []).forEach((w) => params.append("worship", w));
     (stores || []).forEach((s) => params.append("stores", s));
     (gyms || []).forEach((g) => params.append("gyms", g));
+    (sports || []).forEach((s) => params.append("sports", s));
 
     const url = `${API_BASE}/api/listings?${params.toString()}`;
 

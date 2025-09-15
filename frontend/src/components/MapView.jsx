@@ -40,6 +40,9 @@ const ICONS = {
     buddhist_temple: createEmojiIcon('☸️'),
     park: createEmojiIcon('🌳'),
     gym: createEmojiIcon('🏋️'),
+    tennis_court: createEmojiIcon('🎾'),
+    golf_course: createEmojiIcon('⛳'),
+    golf_driving_range: createEmojiIcon('🏌️'),
 };
 
 function BoundsWatcher({ onChange }) {
@@ -67,7 +70,7 @@ function BoundsWatcher({ onChange }) {
 
 export default function MapView({ filters, onLoadingChange }) {
     const [bbox, setBbox] = useState(null);
-    const [data, setData] = useState({ listings: [], amenities_used: { parks: [], worship: [], stores: [], gyms: [] } });
+    const [data, setData] = useState({ listings: [], amenities_used: { parks: [], worship: [], stores: [], gyms: [], sports: [] } });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -96,10 +99,12 @@ export default function MapView({ filters, onLoadingChange }) {
                     worshipRadius: filters.worshipRadius,
                     storesRadius: filters.storesRadius,
                     gymsRadius: filters.gymsRadius,
+                    sportsRadius: filters.sportsRadius,
                     needParks: filters.needParks,
                     worship: filters.worship,
                     stores: filters.stores,
                     gyms: filters.gyms,
+                    sports: filters.sports,
                 });
                 if (!cancelled) setData(payload);
             } catch (err) {
@@ -138,10 +143,12 @@ export default function MapView({ filters, onLoadingChange }) {
                     worshipRadius: filters.worshipRadius,
                     storesRadius: filters.storesRadius,
                     gymsRadius: filters.gymsRadius,
+                    sportsRadius: filters.sportsRadius,
                     needParks: filters.needParks,
                     worship: filters.worship,
                     stores: filters.stores,
                     gyms: filters.gyms,
+                    sports: filters.sports,
                 });
                 if (!cancelled) setData(payload);
             } catch (err) {
@@ -270,6 +277,28 @@ export default function MapView({ filters, onLoadingChange }) {
                         </Popup>
                     </Marker>
                 ))}
+
+                {data.amenities_used.sports.map((l) => {
+                    // Determine the type of sports facility for icon selection
+                    let iconType = 'gym'; // default
+                    if (l.tags.leisure === 'tennis_court' || l.tags.sport === 'tennis') {
+                        iconType = 'tennis_court';
+                    } else if (l.tags.leisure === 'golf_course' || l.tags.sport === 'golf') {
+                        iconType = 'golf_course';
+                    } else if (l.tags.leisure === 'golf_driving_range') {
+                        iconType = 'golf_driving_range';
+                    }
+                    
+                    return (
+                        <Marker key={l.id} position={[l.lat, l.lng]} icon={ICONS[iconType]}>
+                            <Popup>
+                                <div style={{minWidth:220}}>
+                                    <strong>{l.tags.name || l.tags.leisure || 'Sports Facility'}</strong>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    );
+                })}
             </MapContainer>
 
             <div style={{
@@ -285,7 +314,7 @@ export default function MapView({ filters, onLoadingChange }) {
             }}>
                 {loading ? "Loading…" : (
                     error ? <span style={{color:'#b91c1c'}}>Error: {error}</span> : (
-                        <span>Showing {data.listings.length} listings • amenities fetched: parks {data.amenities_used.parks.length}, worship {data.amenities_used.worship.length}, stores {data.amenities_used.stores.length}, gyms {data.amenities_used.gyms.length}</span>
+                        <span>Showing {data.listings.length} listings • amenities fetched: parks {data.amenities_used.parks.length}, worship {data.amenities_used.worship.length}, stores {data.amenities_used.stores.length}, gyms {data.amenities_used.gyms.length}, sports {data.amenities_used.sports.length}</span>
                     )
                 )}
             </div>

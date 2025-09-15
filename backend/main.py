@@ -83,7 +83,6 @@ STORE_TAGS = {
 
 GYM_TAGS = {
     "gym": ["fitness_centre", "gym"],
-    "fitness_center": ["fitness_centre", "gym"],
     "yoga_studio": ["yoga"],
     "pilates_studio": ["pilates"],
     "crossfit_gym": ["crossfit"],
@@ -94,7 +93,12 @@ GYM_TAGS = {
     "swim_studio": ["swimming_pool", "swimming"],
     "trampoline_park": ["trampoline_park"],
     "climbing_gym": ["climbing", "bouldering"],
-    "rock_climbing_gym": ["climbing", "bouldering"],
+}
+
+SPORTS_TAGS = {
+    "tennis_court": ["tennis_court", "tennis"],
+    "golf_driving_range": ["driving_range"],
+    "golf_course": ["golf_course", "golf"],
 }
 
 # -----------------
@@ -129,6 +133,7 @@ def build_overpass_query(
     worship_types: List[str],
     store_types: List[str],
     gym_types: List[str],
+    sports_types: List[str],
 ) -> Tuple[str, List[str]]:
     """Build a single Overpass query that returns centers for all requested categories.
     Returns (query, labels) where labels are the category labels in the same order of blocks added.
@@ -165,19 +170,65 @@ def build_overpass_query(
 
     if gym_types:
         gyms: Set[str] = set()
+        sport_gyms: Set[str] = set()
         for key in gym_types:
             gyms.update(GYM_TAGS.get(key, []))
+            # Check if this gym type should also query by sport tag
+            if key in ["pilates_studio", "crossfit_gym", "barre_studio", "yoga_studio", "dance_studio", 
+                      "martial_arts_gym", "spinning_studio", "swim_studio", "trampoline_park", 
+                      "climbing_gym", "rock_climbing_gym"]:
+                sport_gyms.update(GYM_TAGS.get(key, []))
+        
         if gyms:
             regex = "|".join(sorted(gyms))
+            sport_regex = "|".join(sorted(sport_gyms))
+            
             # Query both amenity=fitness_centre and leisure=fitness_centre
+            # Also query leisure=fitness_centre with specific sport tags
             block = f"(node[\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
                     f"way[\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
                     f"relation[\"amenity\"~\"^({regex})$\"]({south},{west},{north},{east});" \
                     f"node[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});" \
                     f"way[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});" \
-                    f"relation[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east}););"
+                    f"relation[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});"
+            
+            if sport_gyms:
+                block += f"node[\"leisure\"=\"fitness_centre\"][\"sport\"~\"^({sport_regex})$\"]({south},{west},{north},{east});" \
+                        f"way[\"leisure\"=\"fitness_centre\"][\"sport\"~\"^({sport_regex})$\"]({south},{west},{north},{east});" \
+                        f"relation[\"leisure\"=\"fitness_centre\"][\"sport\"~\"^({sport_regex})$\"]({south},{west},{north},{east});"
+            
+            block += ");"
             blocks.append(block)
             labels.append("gyms")
+
+    if sports_types:
+        sports: Set[str] = set()
+        golf_driving_ranges = False
+        for key in sports_types:
+            if key == "golf_driving_range":
+                golf_driving_ranges = True
+            else:
+                sports.update(SPORTS_TAGS.get(key, []))
+        
+        if sports or golf_driving_ranges:
+            # Query leisure tags for sports facilities
+            block = ""
+            if sports:
+                regex = "|".join(sorted(sports))
+                block += f"node[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                        f"way[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                        f"relation[\"leisure\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                        f"node[\"leisure\"=\"sports_centre\"][\"sport\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                        f"way[\"leisure\"=\"sports_centre\"][\"sport\"~\"^({regex})$\"]({south},{west},{north},{east});" \
+                        f"relation[\"leisure\"=\"sports_centre\"][\"sport\"~\"^({regex})$\"]({south},{west},{north},{east});"
+            if golf_driving_ranges:
+                block += f"node[\"golf\"=\"driving_range\"]({south},{west},{north},{east});" \
+                        f"way[\"golf\"=\"driving_range\"]({south},{west},{north},{east});" \
+                        f"relation[\"golf\"=\"driving_range\"]({south},{west},{north},{east});"
+            
+            block = f"({block});"
+            blocks.append(block)
+            labels.append("sports")
 
     if not blocks:
         return "", []
@@ -190,16 +241,17 @@ async def fetch_amenities(
     need_parks: bool,
     worship_types: List[str],
     store_types: List[str],
-    gym_types: List[str]
+    gym_types: List[str],
+    sports_types: List[str]
 ) -> Dict[str, List[Dict[str, Any]]]:
-    """Fetch amenities for the expanded bbox. Returns dict with keys in {parks,worship,stores}."""
-    query, labels = build_overpass_query(bbox, need_parks, worship_types, store_types, gym_types)
-    result: Dict[str, List[Dict[str, Any]]] = {"parks": [], "worship": [], "stores": [], "gyms": []}
+    """Fetch amenities for the expanded bbox. Returns dict with keys in {parks,worship,stores,gyms,sports}."""
+    query, labels = build_overpass_query(bbox, need_parks, worship_types, store_types, gym_types, sports_types)
+    result: Dict[str, List[Dict[str, Any]]] = {"parks": [], "worship": [], "stores": [], "gyms": [], "sports": []}
     if not query:
         return result
     
     # Include specific worship and store types in cache key to avoid stale data
-    cache_key = (bbox_key(bbox), tuple(sorted(labels)), tuple(sorted(worship_types)), tuple(sorted(store_types)), tuple(sorted(gym_types)))
+    cache_key = (bbox_key(bbox), tuple(sorted(labels)), tuple(sorted(worship_types)), tuple(sorted(store_types)), tuple(sorted(gym_types)), tuple(sorted(sports_types)))
     if cache_key in amenities_cache:
         return amenities_cache[cache_key]
     
@@ -226,9 +278,16 @@ async def fetch_amenities(
         elif "shop" in tags:
             result["stores"].append(rec)
         # Check both amenity and leisure tags for gyms
+        # Also check for leisure=fitness_centre with specific sport tags
         elif (tags.get("amenity") in ["fitness_centre", "gym", "yoga", "pilates", "crossfit", "barre", "dance", "martial_arts", "karate", "judo", "taekwondo", "boxing", "muay_thai", "spinning", "swimming_pool", "swimming", "trampoline_park", "climbing", "bouldering"] or
-              tags.get("leisure") in ["fitness_centre", "gym", "yoga", "pilates", "crossfit", "barre", "dance", "martial_arts", "karate", "judo", "taekwondo", "boxing", "muay_thai", "spinning", "swimming_pool", "swimming", "trampoline_park", "climbing", "bouldering"]):
+              tags.get("leisure") in ["fitness_centre", "gym", "yoga", "pilates", "crossfit", "barre", "dance", "martial_arts", "karate", "judo", "taekwondo", "boxing", "muay_thai", "spinning", "swimming_pool", "swimming", "trampoline_park", "climbing", "bouldering"] or
+              (tags.get("leisure") == "fitness_centre" and tags.get("sport") in ["pilates", "crossfit", "yoga", "barre", "dance", "martial_arts", "spinning", "swimming", "trampoline", "climbing", "bouldering"])):
             result["gyms"].append(rec)
+        # Check for sports facilities
+        elif (tags.get("leisure") in ["tennis_court", "golf_course"] or
+              tags.get("golf") == "driving_range" or
+              (tags.get("leisure") == "sports_centre" and tags.get("sport") in ["tennis", "golf"])):
+            result["sports"].append(rec)
 
     amenities_cache[cache_key] = result
     return result
@@ -259,10 +318,12 @@ async def search_listings(
     worship_radius: int = Query(1000, ge=25, le=10000, description="Worship proximity radius in meters"),
     stores_radius: int = Query(1000, ge=25, le=10000, description="Stores proximity radius in meters"),
     gyms_radius: int = Query(1000, ge=25, le=10000, description="Gyms proximity radius in meters"),
+    sports_radius: int = Query(1000, ge=25, le=10000, description="Sports facilities proximity radius in meters"),
     need_parks: bool = Query(False, description="Require proximity to a park"),
     worship: Optional[List[str]] = Query(None, description="List of worship types: synagogue,church,mosque,hindu_temple,buddhist_temple"),
     stores: Optional[List[str]] = Query(None, description="List of store groups: grocery,home_improvement,appliance,farm_supplies"),
     gyms: Optional[List[str]] = Query(None, description="List of gym types: gym,fitness_center,yoga_studio,pilates_studio,crossfit_gym,barre_studio,dance_studio,martial_arts_gym,spinning_studio,swim_studio,trampoline_park,climbing_gym,rock_climbing_gym"),
+    sports: Optional[List[str]] = Query(None, description="List of sports facility types: tennis_court,golf_driving_range,golf_course"),
 ):
     bbox = (west, south, east, north)
 
@@ -287,31 +348,26 @@ async def search_listings(
     worship_types = worship or []
     store_types = stores or []
     gyms_types = gyms or []
-    if not need_parks and not worship_types and not store_types and not gyms_types:
-        return SearchResponse(listings=candidates[:MAX_LISTINGS], amenities_used={"parks": [], "worship": [], "stores": [], "gyms": []})
+    sports_types = sports or []
+    if not need_parks and not worship_types and not store_types and not gyms_types and not sports_types:
+        return SearchResponse(listings=candidates[:MAX_LISTINGS], amenities_used={"parks": [], "worship": [], "stores": [], "gyms": [], "sports": []})
     
     # Expand bbox by the maximum radius needed and fetch amenities once
-    max_radius = max(parks_radius, worship_radius, stores_radius, gyms_radius)
+    max_radius = max(parks_radius, worship_radius, stores_radius, gyms_radius, sports_radius)
     expanded = expand_bbox_by_radius(bbox, max_radius)
-    amenities = await fetch_amenities(expanded, need_parks, worship_types, store_types, gyms_types)
+    amenities = await fetch_amenities(expanded, need_parks, worship_types, store_types, gyms_types, sports_types)
 
     def passes_proximity(lst: Listing) -> bool:
         ok = True
 
         if need_parks:
-            # test
-            print("need_parks triggered")
             ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= parks_radius for a in amenities["parks"]) \
                     if amenities["parks"] else False
         if worship_types and worship_types != ['']:
-            # test
-            print("worship_types triggered")
             ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= worship_radius and \
                     (a["tags"].get("religion") in {WORSHIP_RELIGION_MAP.get(w, w) for w in worship_types})
                     for a in amenities["worship"]) if amenities["worship"] else False
         if store_types and store_types != ['']:
-            # test
-            print("store_types triggered")
             allowed_shops = set()
             for k in store_types:
                 allowed_shops.update(STORE_TAGS.get(k, []))
@@ -319,30 +375,34 @@ async def search_listings(
                     (a["tags"].get("shop") in allowed_shops)
                     for a in amenities["stores"]) if amenities["stores"] else False
         if gyms_types and gyms_types != ['']:
-            # test
-            print("gyms_types triggered")
             allowed_gyms = set()
             for k in gyms_types:
                 allowed_gyms.update(GYM_TAGS.get(k, []))
-            # OLD INCORRECT CODE (commented out):
-            # ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= gyms_radius and \
-            #         (a["tags"].get("amenity") in {GYM_TAGS.get(k, []) for k in gyms_types})
-            #         for a in amenities["gyms"]) if amenities["gyms"] else False
-            # CORRECTED CODE:
             ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= gyms_radius and \
-                    (a["tags"].get("amenity") in allowed_gyms or a["tags"].get("leisure") in allowed_gyms)
+                    (a["tags"].get("amenity") in allowed_gyms or a["tags"].get("leisure") in allowed_gyms or
+                     (a["tags"].get("leisure") == "fitness_centre" and a["tags"].get("sport") in allowed_gyms))
                     for a in amenities["gyms"]) if amenities["gyms"] else False
-
-        # test
-        print("ok:", ok)
-        print()
+        if sports_types and sports_types != ['']:
+            allowed_sports = set()
+            golf_driving_range_requested = False
+            for k in sports_types:
+                if k == "golf_driving_range":
+                    golf_driving_range_requested = True
+                else:
+                    allowed_sports.update(SPORTS_TAGS.get(k, []))
+            
+            def sports_match(a):
+                if golf_driving_range_requested and a["tags"].get("golf") == "driving_range":
+                    return True
+                return (a["tags"].get("leisure") in allowed_sports or
+                       (a["tags"].get("leisure") == "sports_centre" and a["tags"].get("sport") in allowed_sports))
+            
+            ok = ok and any(haversine_m(lst.lat, lst.lng, a["lat"], a["lng"]) <= sports_radius and sports_match(a)
+                    for a in amenities["sports"]) if amenities["sports"] else False
 
         return ok
     
     filtered = [l for l in candidates if passes_proximity(l)]
-
-    # test
-    print("candidates:", len(candidates))
 
     return SearchResponse(
         listings=filtered[:MAX_LISTINGS],

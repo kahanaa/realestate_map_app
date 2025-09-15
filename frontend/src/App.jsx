@@ -13,10 +13,12 @@ export default function App() {
         worshipRadius: 1000,
         storesRadius: 1000,
         gymsRadius: 1000,
+        sportsRadius: 1000,
         needParks: false,
         worship: [],
         stores: [],
         gyms: [],
+        sports: [],
     });
     const [isLoading, setIsLoading] = useState(false);
     const [showLoading, setShowLoading] = useState(false);
