@@ -74,6 +74,19 @@ export default function MapView({ filters, onLoadingChange }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Add CSS animation for spinner
+    React.useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        return () => document.head.removeChild(style);
+    }, []);
+
 
     // Initial load with default bbox
     useEffect(() => {
@@ -162,7 +175,7 @@ export default function MapView({ filters, onLoadingChange }) {
     }, [bbox, JSON.stringify(filters)]);
 
     return (
-        <div className="map">
+        <div className="map" style={{ position: 'relative', height: '100%', width: '100%' }}>
             <MapContainer center={DEFAULT_CENTER} zoom={12} style={{ height: "100%", width: "100%" }}>
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -300,6 +313,45 @@ export default function MapView({ filters, onLoadingChange }) {
                     );
                 })}
             </MapContainer>
+
+            {/* Loading Overlay */}
+            {loading && (
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        padding: '20px 30px',
+                        borderRadius: '12px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        fontSize: '16px',
+                        fontWeight: '500',
+                        color: '#374151',
+                    }}>
+                        <div style={{
+                            width: '20px',
+                            height: '20px',
+                            border: '2px solid #e5e7eb',
+                            borderTop: '2px solid #3b82f6',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite',
+                        }}></div>
+                        Loading map data...
+                    </div>
+                </div>
+            )}
 
             <div style={{
                 position: 'absolute',
